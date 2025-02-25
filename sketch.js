@@ -28,6 +28,8 @@ var flagpole;
 var game_score;
 var lives;
 
+var platforms;
+
 var jumpSound;
 
 function preload() {
@@ -70,7 +72,7 @@ function startGame() {
   ];
 
   tree = {
-    x_pos: [50, 450, 900, 1150, 1300],
+    x_pos: [50, 450, 65, 900, 1150, 1300],
     y_pos: floorPos_y,
     width: 20,
     height: 80,
@@ -91,6 +93,11 @@ function startGame() {
     height: 200,
     color: [165, 42, 42],
   };
+
+  platforms = [];
+  for (let x = 50; x <= 850; x += 400) {
+    platforms.push(createPlatforms(x, floorPos_y - 80, 100));
+  }
 
   cameraPosX = 0;
 
@@ -124,6 +131,10 @@ function draw() {
   drawGameScore();
 
   drawFlagpole();
+
+  for (var i = 0; i < platforms.length; i++) {
+    platforms[i].draw();
+  }
 
   if (flagpole.isReached == false) {
     checkFlagpole();
@@ -245,8 +256,18 @@ function draw() {
   }
 
   if (gameChar_y < floorPos_y) {
-    gameChar_y += 1;
-    isFalling = true;
+    var isContact = false;
+    for (var i = 0; i < platforms.length; i++) {
+      if (platforms[i].checkContact(gameChar_x, gameChar_y) == true) {
+        isContact = true;
+        isFalling = false;
+        break;
+      }
+    }
+    if (isContact == false) {
+      gameChar_y += 1;
+      isFalling = true;
+    }
   } else {
     isFalling = false;
   }
@@ -265,7 +286,7 @@ function keyPressed() {
 
   if (key == " " || key == "w") {
     if (!isFalling) {
-      gameChar_y -= 80;
+      gameChar_y -= 100;
       jumpSound.play();
     }
   }
@@ -336,7 +357,6 @@ function drawMountains() {
 
 function drawTrees() {
   for (var i = 0; i < tree.x_pos.length; i++) {
-
     fill(139, 69, 19);
     rect(tree.x_pos[i], tree.y_pos - 80, tree.width, tree.height);
 
@@ -361,10 +381,10 @@ function drawTrees() {
   }
 
   for (var j = 0; j < tree.x_pos.length; j++) {
-    fill(120, 80, 40);
-    rect(tree.x_pos[j] * 2, tree.y_pos - 80, tree.width, tree.height);
+    fill(218, 165, 32);
+    rect(tree.x_pos[j] * 2.5, tree.y_pos - 80, tree.width, tree.height);
     fill(60, 200, 80);
-    ellipse(tree.x_pos[j] * 2 + tree.width / 2, tree.y_pos - 100, 70, 60);
+    ellipse(tree.x_pos[j] * 2.5 + tree.width / 2, tree.y_pos - 100, 70, 60);
   }
 }
 
@@ -399,7 +419,7 @@ function checkCanyon(t_canyon) {
     gameChar_y >= floorPos_y
   ) {
     isPlummeting = true;
-    gameChar_y += 5;
+    gameChar_y += 15;
   } else {
     isPlummeting = false;
   }
@@ -489,4 +509,55 @@ function checkPlayerDie() {
       startGame();
     }
   }
+}
+
+function createPlatforms(x, y, length) {
+  var p = {
+    x: x,
+    y: y,
+    length: length,
+    draw: function () {
+      fill(255, 200, 255);
+      stroke(200, 0, 200);
+      strokeWeight(2);
+      rect(this.x, this.y, this.length, 20, 8); // Rounded corners with radius 8
+
+      stroke(180, 0, 180);
+      strokeWeight(1);
+      line(
+        this.x + this.length * 0.25,
+        this.y,
+        this.x + this.length * 0.25,
+        this.y + 20,
+      );
+      line(
+        this.x + this.length * 0.5,
+        this.y,
+        this.x + this.length * 0.5,
+        this.y + 20,
+      );
+      line(
+        this.x + this.length * 0.75,
+        this.y,
+        this.x + this.length * 0.75,
+        this.y + 20,
+      );
+
+      stroke(255, 200, 255);
+      strokeWeight(2);
+      line(this.x + 2, this.y + 2, this.x + this.length - 2, this.y + 2);
+
+      noStroke();
+    },
+    checkContact: function (gameChar_x, gameChar_y) {
+      if (gameChar_x > this.x && gameChar_x < this.x + this.length) {
+        var d = this.y - gameChar_y;
+        if (d >= 0 && d < 5) {
+          return true;
+        }
+        return false;
+      }
+    },
+  };
+  return p;
 }
