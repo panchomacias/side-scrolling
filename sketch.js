@@ -20,7 +20,7 @@ var isPlummeting;
 
 var collectables;
 var canyons;
-var tree;
+var trees;
 var cloud;
 var mountain;
 var cameraPosX;
@@ -73,12 +73,13 @@ function startGame() {
     { x_pos: 1800, y_pos: 432, width: 150, height: 144 },
   ];
 
-  tree = {
-    x_pos: [50, 450, 65, 900, 1150, 1300],
-    y_pos: floorPos_y,
-    width: 20,
-    height: 80,
-  };
+  trees = [];
+  for (var x = 50; x <= 1300; x += 250) {
+    var treeHeight = random(50, 120);
+    var treeWidth = random(20, 35);
+    var treeType = Math.floor(random(2)); // This will give 0 or 1 as integers
+    trees.push(createTree(x, floorPos_y, treeWidth, treeHeight, treeType));
+  }
 
   cloud = {
     x_pos: [50, 300, 600, 900, 1200],
@@ -97,8 +98,10 @@ function startGame() {
   };
 
   platforms = [];
-  for (let x = 50; x <= 850; x += 400) {
-    platforms.push(createPlatforms(x, floorPos_y - 80, 100));
+  for (var x = 50; x <= 850; x += 250) {
+    var randomLength = random(50, 150);
+    var randomHeight = random(floorPos_y - 50, floorPos_y - 100);
+    platforms.push(createPlatforms(x, randomHeight, randomLength));
   }
 
   enemies = [];
@@ -372,37 +375,67 @@ function drawMountains() {
     );
   }
 }
+function createTree(x, y, width, height, type = 0) {
+  var tree = {
+    x: x,
+    y: y,
+    width: width,
+    height: height,
+    type: type,
+    draw: function () {
+      strokeWeight(2);
+      if (this.type === 0) {
+        // Original tree type
+        fill(139, 69, 19);
+        rect(this.x, this.y - this.height, this.width, this.height);
+        fill(85, 107, 47);
+        triangle(
+          this.x - this.width,
+          this.y - this.height,
+          this.x + this.width / 2,
+          this.y - this.height * 1.5,
+          this.x + this.width * 2,
+          this.y - this.height,
+        );
+        triangle(
+          this.x - this.width,
+          this.y - this.height * 1.2,
+          this.x + this.width / 2,
+          this.y - this.height * 1.75,
+          this.x + this.width * 2,
+          this.y - this.height * 1.2,
+        );
+      } else if (this.type === 1) {
+        // Violet ellipse tree - simpler and visually distinct
+        fill(139, 69, 19); // Brown trunk
+        rect(this.x, this.y - this.height, this.width, this.height);
+
+        // Violet elliptical foliage
+        fill(148, 87, 235); // Violet color
+        ellipse(
+          this.x + this.width / 2,
+          this.y - this.height - this.height * 0.6,
+          this.width * 5,
+          this.height * 1.2,
+        );
+
+        // Add some highlight/detail to make it more interesting
+        fill(171, 130, 255); // Lighter violet
+        ellipse(
+          this.x + this.width / 2,
+          this.y - this.height - this.height * 0.7,
+          this.width * 3,
+          this.height * 0.7,
+        );
+      }
+    },
+  };
+  return tree;
+}
 
 function drawTrees() {
-  for (var i = 0; i < tree.x_pos.length; i++) {
-    fill(139, 69, 19);
-    rect(tree.x_pos[i], tree.y_pos - 80, tree.width, tree.height);
-
-    fill(85, 107, 47);
-    triangle(
-      tree.x_pos[i] - tree.width,
-      tree.y_pos - tree.height,
-      tree.x_pos[i] + tree.width / 2,
-      tree.y_pos - tree.height * 1.5,
-      tree.x_pos[i] + tree.width * 2,
-      tree.y_pos - tree.height,
-    );
-
-    triangle(
-      tree.x_pos[i] - tree.width,
-      tree.y_pos - tree.height * 1.2,
-      tree.x_pos[i] + tree.width / 2,
-      tree.y_pos - tree.height * 1.75,
-      tree.x_pos[i] + tree.width * 2,
-      tree.y_pos - tree.height * 1.2,
-    );
-  }
-
-  for (var j = 0; j < tree.x_pos.length; j++) {
-    fill(218, 165, 32);
-    rect(tree.x_pos[j] * 2.5, tree.y_pos - 80, tree.width, tree.height);
-    fill(60, 200, 80);
-    ellipse(tree.x_pos[j] * 2.5 + tree.width / 2, tree.y_pos - 100, 70, 60);
+  for (var i = 0; i < trees.length; i++) {
+    trees[i].draw();
   }
 }
 
