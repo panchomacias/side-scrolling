@@ -33,12 +33,18 @@ var platforms;
 var enemies;
 
 var jumpSound;
+var gameOverSound;
 
 function preload() {
   soundFormats("mp3", "wav");
 
   jumpSound = loadSound("assets/jump.wav");
   jumpSound.setVolume(0.1);
+
+  gameOverSound = loadSound("assets/gameover.wav");
+  gameOverSound.setVolume(0.1);
+
+  myFont = loadFont("assets/PressStart2P-Regular.ttf");
 }
 
 function setup() {
@@ -83,14 +89,11 @@ function startGame() {
   ];
 
   trees = [];
-  for (var x = 50; x <= 1300; x += 250) {
-    var treeHeight = random(50, 120);
-    var treeWidth = random(20, 35);
-    var treeType = Math.floor(random(3));
+  for (var x = 50; x <= 5000; x += 250) {
+    var treeHeight = random(50, 75);
+    var treeWidth = random(15, 25);
+    var treeType = Math.floor(random(2));
     trees.push(createTree(x, floorPos_y, treeWidth, treeHeight, treeType));
-    trees.push(createTree(50, floorPos_y, 25, 80, 0));
-    trees.push(createTree(300, floorPos_y, 25, 80, 1));
-    trees.push(createTree(550, floorPos_y, 25, 80, 2));
   }
 
   cloud = {
@@ -119,19 +122,16 @@ function startGame() {
     platforms.push(createPlatforms(x, randomHeight, randomLength));
   }
 
-  // Middle section - more challenging platforms
   platforms.push(createPlatforms(1800, floorPos_y - 100, 120));
   platforms.push(createPlatforms(2000, floorPos_y - 150, 100));
   platforms.push(createPlatforms(2200, floorPos_y - 200, 80));
   platforms.push(createMovingPlatform(2500, floorPos_y - 120, 100, 200, 1));
 
-  // Staircase section
   platforms.push(createPlatforms(2900, floorPos_y - 80, 60));
   platforms.push(createPlatforms(3000, floorPos_y - 130, 60));
   platforms.push(createPlatforms(3100, floorPos_y - 180, 60));
   platforms.push(createPlatforms(3200, floorPos_y - 230, 60));
 
-  // Final challenging section
   platforms.push(createMovingPlatform(3500, floorPos_y - 150, 80, 300, 1.5));
   platforms.push(createPlatforms(4000, floorPos_y - 120, 40));
   platforms.push(createMovingPlatform(4200, floorPos_y - 180, 60, 250, 2));
@@ -141,26 +141,16 @@ function startGame() {
 
   enemies = [];
   enemies.push(new Enemy(100, floorPos_y - 10, 100));
-  // Early enemies - slower and less range
   enemies.push(new Enemy(400, floorPos_y - 10, 100, 0.5));
   enemies.push(new Enemy(800, floorPos_y - 10, 150, 0.7));
-
-  // Middle section enemies - medium difficulty
   enemies.push(new Enemy(1500, floorPos_y - 10, 200, 1.0));
   enemies.push(new Enemy(2000, floorPos_y - 10, 250, 1.2));
   enemies.push(new Enemy(2500, floorPos_y - 130, 100, 1.0)); // On platform
 
-  // Late enemies - faster and more range
   enemies.push(new Enemy(3000, floorPos_y - 10, 300, 1.5));
   enemies.push(new Enemy(3500, floorPos_y - 10, 250, 2.0));
   enemies.push(new Enemy(4000, floorPos_y - 10, 300, 2.5));
   enemies.push(new Enemy(4500, floorPos_y - 10, 350, 3.0));
-
-  // Add checkpoints
-  checkpoints = [
-    { x_pos: 1500, isReached: false },
-    { x_pos: 3000, isReached: false },
-  ];
 
   cameraPosX = 0;
 
@@ -312,11 +302,15 @@ function draw() {
   pop();
 
   if (lives < 1) {
+    fill(0, 0, 0, 150);
+    rect(0, 0, width, height);
+
     fill(255);
     textSize(32);
-    text("Game Over!", cameraPosX + width / 2 - 100, height / 2);
+    textFont(myFont);
+    text("Game Over!", width / 2, height / 2);
     textSize(16);
-    text("Press 'r' to restart", cameraPosX + width / 2 - 100, height / 2 + 30);
+    text("Press 'r' to restart", width / 2, height / 2 + 30);
   }
 
   if (flagpole.isReached) {
@@ -369,7 +363,7 @@ function keyPressed() {
 
   if (key == " " || key == "w") {
     if (!isFalling) {
-      gameChar_y -= 100;
+      gameChar_y -= 120;
       jumpSound.play();
     }
   }
@@ -425,17 +419,42 @@ function drawClouds() {
 }
 
 function drawMountains() {
-  for (var k = 0; k < mountain.x_pos.length; k++) {
-    fill(mountain.color);
-    triangle(
-      mountain.x_pos[k],
-      mountain.y_pos,
-      mountain.x_pos[k] + mountain.width,
-      mountain.y_pos,
-      mountain.x_pos[k] + mountain.width / 2,
-      mountain.y_pos - mountain.height,
-    );
+  push();
+
+  fill(80, 70, 60, 180);
+  noStroke();
+
+  for (var i = 0; i < 25; i++) {
+    var mountainX = i * 400;
+
+    beginShape();
+    vertex(mountainX, floorPos_y);
+    vertex(mountainX + 50, floorPos_y - 80);
+    vertex(mountainX + 100, floorPos_y - 220);
+    vertex(mountainX + 150, floorPos_y - 120);
+    vertex(mountainX + 200, floorPos_y - 250);
+    vertex(mountainX + 250, floorPos_y - 180);
+    vertex(mountainX + 300, floorPos_y - 320);
+    vertex(mountainX + 350, floorPos_y - 150);
+    vertex(mountainX + 400, floorPos_y);
+    endShape(CLOSE);
   }
+
+  fill(100, 80, 65, 220);
+  for (var i = 0; i < 15; i++) {
+    var mountainX = i * 800 + 200;
+
+    beginShape();
+    vertex(mountainX, floorPos_y);
+    vertex(mountainX + 200, floorPos_y - 180);
+    vertex(mountainX + 350, floorPos_y - 80);
+    vertex(mountainX + 500, floorPos_y - 220);
+    vertex(mountainX + 650, floorPos_y - 120);
+    vertex(mountainX + 800, floorPos_y);
+    endShape(CLOSE);
+  }
+
+  pop();
 }
 
 function createTree(x, y, width, height, type = 0) {
@@ -448,7 +467,6 @@ function createTree(x, y, width, height, type = 0) {
     draw: function () {
       strokeWeight(2);
       if (this.type === 0) {
-        // Original tree type
         fill(139, 69, 19);
         rect(this.x, this.y - this.height, this.width, this.height);
         fill(85, 107, 47);
@@ -469,7 +487,7 @@ function createTree(x, y, width, height, type = 0) {
           this.y - this.height * 1.2,
         );
       } else if (this.type === 1) {
-        fill(139, 69, 19); // Brown trunk
+        fill(139, 69, 19);
         rect(this.x, this.y - this.height, this.width, this.height);
 
         fill(148, 87, 235);
@@ -487,25 +505,6 @@ function createTree(x, y, width, height, type = 0) {
           this.width * 3,
           this.height * 0.7,
         );
-      } else if (this.type === 2) {
-        // Cactus type
-        fill(34, 139, 34);
-        rect(this.x, this.y - this.height, this.width, this.height);
-
-        rect(
-          this.x - this.width / 2,
-          this.y - this.height * 0.6,
-          this.width / 2,
-          this.height * 0.4,
-        );
-
-        // Right arm
-        rect(
-          this.x + this.width,
-          this.y - this.height * 0.6,
-          this.width / 2,
-          this.height * 0.4,
-        );
       }
     },
   };
@@ -522,16 +521,29 @@ function drawCanyon(t_canyon) {
   fill(100, 155, 255);
   rect(t_canyon.x_pos, t_canyon.y_pos, t_canyon.width, t_canyon.height);
 
-  stroke(139, 69, 19);
-  strokeWeight(1);
+  fill(70, 130, 230);
+  rect(
+    t_canyon.x_pos,
+    t_canyon.y_pos + t_canyon.height / 2,
+    t_canyon.width,
+    t_canyon.height / 2,
+  );
 
+  stroke(150, 190, 255);
+  strokeWeight(1);
+  for (var i = 0; i < 3; i++) {
+    var y = t_canyon.y_pos + 10 + i * 20;
+    line(t_canyon.x_pos + 5, y, t_canyon.x_pos + t_canyon.width - 5, y);
+  }
+
+  stroke(139, 69, 19);
+  strokeWeight(2);
   line(
     t_canyon.x_pos,
     t_canyon.y_pos,
     t_canyon.x_pos,
     t_canyon.y_pos + t_canyon.height,
   );
-
   line(
     t_canyon.x_pos + t_canyon.width,
     t_canyon.y_pos,
@@ -771,12 +783,29 @@ function Enemy(x, y, range, speed = 1) {
 
   this.draw = function () {
     this.update();
-    fill(255, 0, 0);
+    // Main bomb body (black circle)
+    fill(30, 30, 30);
     ellipse(this.currentX, this.y, 20, 20);
-    fill(0);
-    ellipse(this.currentX - 5, this.y - 5, 2, 2);
-    ellipse(this.currentX + 5, this.y - 5, 2, 2);
-    ellipse(this.currentX, this.y + 5, 5, 5);
+
+    // Bomb fuse on top
+    stroke(150, 90, 60); // Brown fuse color
+    strokeWeight(2);
+    line(this.currentX, this.y - 10, this.currentX - 3, this.y - 15);
+
+    // Fuse tip (small orange/red glow)
+    noStroke();
+    fill(255, 150, 50); // Orange glow
+    ellipse(this.currentX - 3, this.y - 15, 4, 4);
+
+    // Metal cap on top of bomb
+    fill(120, 120, 120); // Gray metal
+    rect(this.currentX - 4, this.y - 12, 8, 4, 1);
+
+    // Highlight reflection on bomb (makes it look round)
+    fill(80, 80, 80);
+    ellipse(this.currentX - 4, this.y - 4, 6, 6);
+    fill(200, 200, 200);
+    ellipse(this.currentX - 5, this.y - 5, 3, 3);
   };
   this.checkContact = function (gc_x, gc_y) {
     var d = dist(gc_x, gc_y, this.currentX, this.y);
