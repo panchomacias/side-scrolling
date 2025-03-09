@@ -37,7 +37,6 @@ var jumpSound;
 function preload() {
   soundFormats("mp3", "wav");
 
-  //load your sounds here
   jumpSound = loadSound("assets/jump.wav");
   jumpSound.setVolume(0.1);
 }
@@ -64,6 +63,11 @@ function startGame() {
     { x_pos: 750, y_pos: floorPos_y - 100, isFound: false },
     { x_pos: 1200, y_pos: floorPos_y - 100, isFound: false },
     { x_pos: 1900, y_pos: floorPos_y - 100, isFound: false },
+    { x_pos: 2500, y_pos: floorPos_y - 100, isFound: false },
+    { x_pos: 3000, y_pos: floorPos_y - 150, isFound: false },
+    { x_pos: 3500, y_pos: floorPos_y - 200, isFound: false },
+    { x_pos: 4200, y_pos: floorPos_y - 150, isFound: false },
+    { x_pos: 4800, y_pos: floorPos_y - 100, isFound: false },
   ];
 
   canyons = [
@@ -71,18 +75,29 @@ function startGame() {
     { x_pos: 1000, y_pos: 432, width: 100, height: 144 },
     { x_pos: 1400, y_pos: 432, width: 100, height: 144 },
     { x_pos: 1800, y_pos: 432, width: 150, height: 144 },
+    { x_pos: 2300, y_pos: 432, width: 180, height: 144 },
+    { x_pos: 2800, y_pos: 432, width: 150, height: 144 },
+    { x_pos: 3300, y_pos: 432, width: 200, height: 144 },
+    { x_pos: 3900, y_pos: 432, width: 220, height: 144 },
+    { x_pos: 4500, y_pos: 432, width: 240, height: 144 },
   ];
 
   trees = [];
   for (var x = 50; x <= 1300; x += 250) {
     var treeHeight = random(50, 120);
     var treeWidth = random(20, 35);
-    var treeType = Math.floor(random(2)); // This will give 0 or 1 as integers
+    var treeType = Math.floor(random(3));
     trees.push(createTree(x, floorPos_y, treeWidth, treeHeight, treeType));
+    trees.push(createTree(50, floorPos_y, 25, 80, 0));
+    trees.push(createTree(300, floorPos_y, 25, 80, 1));
+    trees.push(createTree(550, floorPos_y, 25, 80, 2));
   }
 
   cloud = {
-    x_pos: [50, 300, 600, 900, 1200],
+    x_pos: [
+      50, 300, 600, 900, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400,
+      4800,
+    ],
     y_pos: 150,
     width: 100,
     height: 50,
@@ -90,7 +105,7 @@ function startGame() {
   };
 
   mountain = {
-    x_pos: [500, 700, 1150],
+    x_pos: [500, 700, 1150, 1800, 2400, 3100, 3800, 4500],
     y_pos: floorPos_y,
     width: 200,
     height: 200,
@@ -104,12 +119,52 @@ function startGame() {
     platforms.push(createPlatforms(x, randomHeight, randomLength));
   }
 
+  // Middle section - more challenging platforms
+  platforms.push(createPlatforms(1800, floorPos_y - 100, 120));
+  platforms.push(createPlatforms(2000, floorPos_y - 150, 100));
+  platforms.push(createPlatforms(2200, floorPos_y - 200, 80));
+  platforms.push(createMovingPlatform(2500, floorPos_y - 120, 100, 200, 1));
+
+  // Staircase section
+  platforms.push(createPlatforms(2900, floorPos_y - 80, 60));
+  platforms.push(createPlatforms(3000, floorPos_y - 130, 60));
+  platforms.push(createPlatforms(3100, floorPos_y - 180, 60));
+  platforms.push(createPlatforms(3200, floorPos_y - 230, 60));
+
+  // Final challenging section
+  platforms.push(createMovingPlatform(3500, floorPos_y - 150, 80, 300, 1.5));
+  platforms.push(createPlatforms(4000, floorPos_y - 120, 40));
+  platforms.push(createMovingPlatform(4200, floorPos_y - 180, 60, 250, 2));
+  platforms.push(createPlatforms(4400, floorPos_y - 200, 50));
+  platforms.push(createPlatforms(4600, floorPos_y - 150, 60));
+  platforms.push(createPlatforms(4800, floorPos_y - 100, 70));
+
   enemies = [];
   enemies.push(new Enemy(100, floorPos_y - 10, 100));
+  // Early enemies - slower and less range
+  enemies.push(new Enemy(400, floorPos_y - 10, 100, 0.5));
+  enemies.push(new Enemy(800, floorPos_y - 10, 150, 0.7));
+
+  // Middle section enemies - medium difficulty
+  enemies.push(new Enemy(1500, floorPos_y - 10, 200, 1.0));
+  enemies.push(new Enemy(2000, floorPos_y - 10, 250, 1.2));
+  enemies.push(new Enemy(2500, floorPos_y - 130, 100, 1.0)); // On platform
+
+  // Late enemies - faster and more range
+  enemies.push(new Enemy(3000, floorPos_y - 10, 300, 1.5));
+  enemies.push(new Enemy(3500, floorPos_y - 10, 250, 2.0));
+  enemies.push(new Enemy(4000, floorPos_y - 10, 300, 2.5));
+  enemies.push(new Enemy(4500, floorPos_y - 10, 350, 3.0));
+
+  // Add checkpoints
+  checkpoints = [
+    { x_pos: 1500, isReached: false },
+    { x_pos: 3000, isReached: false },
+  ];
 
   cameraPosX = 0;
 
-  flagpole = { x_pos: 2000, isReached: false };
+  flagpole = { x_pos: 5000, isReached: false };
 
   game_score = 0;
 }
@@ -122,11 +177,11 @@ function draw() {
   push();
   translate(-cameraPosX, 0);
 
+  drawMountains();
+
   drawTrees();
 
   drawClouds();
-
-  drawMountains();
 
   drawCollectable(collectables);
 
@@ -260,6 +315,8 @@ function draw() {
     fill(255);
     textSize(32);
     text("Game Over!", cameraPosX + width / 2 - 100, height / 2);
+    textSize(16);
+    text("Press 'r' to restart", cameraPosX + width / 2 - 100, height / 2 + 30);
   }
 
   if (flagpole.isReached) {
@@ -295,6 +352,11 @@ function draw() {
 }
 
 function keyPressed() {
+  if (key == "R" || key == "r") {
+    lives = 3;
+    startGame();
+    return;
+  }
   if (lives < 1 || flagpole.isReached) return;
 
   if (key == "A" || keyCode == 65) {
@@ -375,6 +437,7 @@ function drawMountains() {
     );
   }
 }
+
 function createTree(x, y, width, height, type = 0) {
   var tree = {
     x: x,
@@ -406,12 +469,10 @@ function createTree(x, y, width, height, type = 0) {
           this.y - this.height * 1.2,
         );
       } else if (this.type === 1) {
-        // Violet ellipse tree - simpler and visually distinct
         fill(139, 69, 19); // Brown trunk
         rect(this.x, this.y - this.height, this.width, this.height);
 
-        // Violet elliptical foliage
-        fill(148, 87, 235); // Violet color
+        fill(148, 87, 235);
         ellipse(
           this.x + this.width / 2,
           this.y - this.height - this.height * 0.6,
@@ -419,13 +480,31 @@ function createTree(x, y, width, height, type = 0) {
           this.height * 1.2,
         );
 
-        // Add some highlight/detail to make it more interesting
-        fill(171, 130, 255); // Lighter violet
+        fill(171, 130, 255);
         ellipse(
           this.x + this.width / 2,
           this.y - this.height - this.height * 0.7,
           this.width * 3,
           this.height * 0.7,
+        );
+      } else if (this.type === 2) {
+        // Cactus type
+        fill(34, 139, 34);
+        rect(this.x, this.y - this.height, this.width, this.height);
+
+        rect(
+          this.x - this.width / 2,
+          this.y - this.height * 0.6,
+          this.width / 2,
+          this.height * 0.4,
+        );
+
+        // Right arm
+        rect(
+          this.x + this.width,
+          this.y - this.height * 0.6,
+          this.width / 2,
+          this.height * 0.4,
         );
       }
     },
@@ -542,8 +621,17 @@ function drawFlagpole() {
 
 function checkFlagpole() {
   var d = abs(gameChar_x - flagpole.x_pos);
-  if (d < 15) {
+  var requiredScore = 7;
+  if (d < 15 && game_score >= requiredScore) {
     flagpole.isReached = true;
+  } else if (d < 15) {
+    fill(255);
+    textSize(16);
+    text(
+      `Collect at least score: ${requiredCollectables} items to finish!`,
+      gameChar_x - 120,
+      floorPos_y - 50,
+    );
   }
 }
 
@@ -571,7 +659,7 @@ function createPlatforms(x, y, length) {
       fill(255, 200, 255);
       stroke(200, 0, 200);
       strokeWeight(2);
-      rect(this.x, this.y, this.length, 20, 8); // Rounded corners with radius 8
+      rect(this.x, this.y, this.length, 20, 8);
 
       stroke(180, 0, 180);
       strokeWeight(1);
@@ -613,23 +701,74 @@ function createPlatforms(x, y, length) {
   return p;
 }
 
-function Enemy(x, y, range) {
+function createMovingPlatform(x, y, length, range, speed) {
+  var p = {
+    x: x,
+    y: y,
+    length: length,
+    range: range,
+    speed: speed,
+    direction: 1,
+    originalX: x,
+
+    update: function () {
+      this.x += this.speed * this.direction;
+
+      if (this.x > this.originalX + this.range) {
+        this.direction = -1;
+      } else if (this.x < this.originalX) {
+        this.direction = 1;
+      }
+    },
+
+    draw: function () {
+      this.update();
+      fill(255, 200, 255);
+      stroke(0, 0, 200);
+      rect(this.x, this.y, this.length, 20, 8);
+
+      fill(0, 0, 200);
+      noStroke();
+      ellipse(this.x + 10, this.y + 10, 5, 5);
+      ellipse(this.x + this.length - 10, this.y + 10, 5, 5);
+    },
+
+    checkContact: function (gameChar_x, gameChar_y) {
+      if (gameChar_x > this.x && gameChar_x < this.x + this.length) {
+        var d = this.y - gameChar_y;
+        if (d >= 0 && d < 5) {
+          if (this.direction > 0) {
+            gameChar_x += this.speed;
+          } else {
+            gameChar_x -= this.speed;
+          }
+          return true;
+        }
+        return false;
+      }
+    },
+  };
+  return p;
+}
+
+function Enemy(x, y, range, speed = 1) {
   this.x = x;
   this.y = y;
   this.range = range;
+  this.speed = speed;
 
   this.currentX = x;
-  this.inc = 1;
+  this.inc = this.speed;
 
   this.update = function () {
     this.currentX += this.inc;
-
     if (this.currentX >= this.x + this.range) {
-      this.inc = -1;
+      this.inc = this.speed * -1;
     } else if (this.currentX < this.x) {
-      this.inc = 1;
+      this.inc = this.speed;
     }
   };
+
   this.draw = function () {
     this.update();
     fill(255, 0, 0);
