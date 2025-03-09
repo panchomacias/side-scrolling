@@ -1,14 +1,3 @@
-/*
-
-- Copy your game project code into this file
-- for the p5.Sound library look here https://p5js.org/reference/#/libraries/p5.sound
-- for finding cool sounds perhaps look here
-https://freesound.org/
-
-
-*/
-
-// Declare variables
 var gameChar_x;
 var gameChar_y;
 var floorPos_y;
@@ -32,17 +21,26 @@ var platforms;
 
 var enemies;
 
+var myFont;
 var jumpSound;
-var gameOverSound;
+var collectableSound;
+var ouchSound;
+var victorySound;
 
 function preload() {
   soundFormats("mp3", "wav");
 
-  jumpSound = loadSound("assets/jump.wav");
+  jumpSound = loadSound("assets/jump.mp3");
   jumpSound.setVolume(0.1);
 
-  gameOverSound = loadSound("assets/gameover.wav");
-  gameOverSound.setVolume(0.1);
+  collectableSound = loadSound("assets/collectable.mp3");
+  collectableSound.setVolume(0.1);
+
+  ouchSound = loadSound("assets/ouch.mp3");
+  ouchSound.setVolume(0.1);
+
+  victorySound = loadSound("assets/victory.mp3");
+  victorySound.setVolume(0.1);
 
   myFont = loadFont("assets/PressStart2P-Regular.ttf");
 }
@@ -56,7 +54,7 @@ function setup() {
 function startGame() {
   floorPos_y = (height * 3) / 4;
 
-  gameChar_x = width / 7;
+  gameChar_x = 0;
   gameChar_y = floorPos_y;
 
   isLeft = false;
@@ -125,16 +123,18 @@ function startGame() {
   platforms.push(createPlatforms(1800, floorPos_y - 100, 120));
   platforms.push(createPlatforms(2000, floorPos_y - 150, 100));
   platforms.push(createPlatforms(2200, floorPos_y - 200, 80));
-  platforms.push(createMovingPlatform(2500, floorPos_y - 120, 100, 200, 1));
+  platforms.push(createMovingPlatform(2500, floorPos_y - 120, 100, 500, 1));
 
   platforms.push(createPlatforms(2900, floorPos_y - 80, 60));
   platforms.push(createPlatforms(3000, floorPos_y - 130, 60));
   platforms.push(createPlatforms(3100, floorPos_y - 180, 60));
   platforms.push(createPlatforms(3200, floorPos_y - 230, 60));
 
-  platforms.push(createMovingPlatform(3500, floorPos_y - 150, 80, 300, 1.5));
+  platforms.push(createMovingPlatform(3400, floorPos_y - 100, 120, 500, 1.5));
+  platforms.push(createPlatforms(3650, floorPos_y - 50, 80));
   platforms.push(createPlatforms(4000, floorPos_y - 120, 40));
-  platforms.push(createMovingPlatform(4200, floorPos_y - 180, 60, 250, 2));
+  platforms.push(createMovingPlatform(4200, floorPos_y - 180, 60, 500, 2));
+  platforms.push(createPlatforms(4200, floorPos_y - 100, 50));
   platforms.push(createPlatforms(4400, floorPos_y - 200, 50));
   platforms.push(createPlatforms(4600, floorPos_y - 150, 60));
   platforms.push(createPlatforms(4800, floorPos_y - 100, 70));
@@ -145,8 +145,6 @@ function startGame() {
   enemies.push(new Enemy(800, floorPos_y - 10, 150, 0.7));
   enemies.push(new Enemy(1500, floorPos_y - 10, 200, 1.0));
   enemies.push(new Enemy(2000, floorPos_y - 10, 250, 1.2));
-  enemies.push(new Enemy(2500, floorPos_y - 130, 100, 1.0)); // On platform
-
   enemies.push(new Enemy(3000, floorPos_y - 10, 300, 1.5));
   enemies.push(new Enemy(3500, floorPos_y - 10, 250, 2.0));
   enemies.push(new Enemy(4000, floorPos_y - 10, 300, 2.5));
@@ -199,8 +197,9 @@ function draw() {
 
     if (isContact) {
       if (lives > 0) {
-        startGame();
+        ouchSound.play();
         lives -= 1;
+        startGame();
         break;
       }
     }
@@ -337,7 +336,7 @@ function draw() {
       }
     }
     if (isContact == false) {
-      gameChar_y += 1;
+      gameChar_y += 1.3;
       isFalling = true;
     }
   } else {
@@ -561,7 +560,7 @@ function checkCanyon(t_canyon) {
     gameChar_y >= floorPos_y
   ) {
     isPlummeting = true;
-    gameChar_y += 15;
+    gameChar_y += 30;
   } else {
     isPlummeting = false;
   }
@@ -590,14 +589,17 @@ function checkCollectable(t_collectable) {
     dist(gameChar_x, gameChar_y, t_collectable.x_pos, t_collectable.y_pos) < 40
   ) {
     t_collectable.isFound = true;
+    collectableSound.play();
     game_score += 1;
   }
 }
 
 function drawGameScore() {
   fill(255);
+  textAlign(LEFT);
   textSize(16);
-  text(`score: ${game_score}`.toUpperCase(), cameraPosX, 20);
+  textFont(myFont);
+  text(`Score: ${game_score}.`.toUpperCase(), cameraPosX + 15, 20);
 }
 
 function drawFlagpole() {
@@ -633,17 +635,10 @@ function drawFlagpole() {
 
 function checkFlagpole() {
   var d = abs(gameChar_x - flagpole.x_pos);
-  var requiredScore = 7;
-  if (d < 15 && game_score >= requiredScore) {
+
+  if (d < 15) {
     flagpole.isReached = true;
-  } else if (d < 15) {
-    fill(255);
-    textSize(16);
-    text(
-      `Collect at least score: ${requiredCollectables} items to finish!`,
-      gameChar_x - 120,
-      floorPos_y - 50,
-    );
+    victorySound.play();
   }
 }
 
@@ -652,6 +647,7 @@ function checkPlayerDie() {
     noStroke();
     fill(255, 255, 255);
     textAlign(LEFT);
+    textFont(myFont);
     text(`lives: ${lives}.`.toUpperCase(), cameraPosX + 15, 40);
   }
   if (gameChar_y >= height) {
@@ -783,30 +779,26 @@ function Enemy(x, y, range, speed = 1) {
 
   this.draw = function () {
     this.update();
-    // Main bomb body (black circle)
-    fill(30, 30, 30);
-    ellipse(this.currentX, this.y, 20, 20);
-
-    // Bomb fuse on top
-    stroke(150, 90, 60); // Brown fuse color
-    strokeWeight(2);
-    line(this.currentX, this.y - 10, this.currentX - 3, this.y - 15);
-
-    // Fuse tip (small orange/red glow)
+    fill(200, 240, 255);
+    stroke(150, 210, 255);
+    strokeWeight(1.5);
+    rect(this.currentX - 10, this.y - 10, 20, 20, 3);
     noStroke();
-    fill(255, 150, 50); // Orange glow
-    ellipse(this.currentX - 3, this.y - 15, 4, 4);
+    fill(255, 255, 255, 180);
+    rect(this.currentX - 8, this.y - 8, 6, 6, 2);
+    fill(230, 250, 255, 150);
+    rect(this.currentX + 2, this.y - 5, 5, 10, 2);
 
-    // Metal cap on top of bomb
-    fill(120, 120, 120); // Gray metal
-    rect(this.currentX - 4, this.y - 12, 8, 4, 1);
+    fill(50, 50, 150);
+    ellipse(this.currentX - 4, this.y - 3, 3, 3);
+    ellipse(this.currentX + 4, this.y - 3, 3, 3);
 
-    // Highlight reflection on bomb (makes it look round)
-    fill(80, 80, 80);
-    ellipse(this.currentX - 4, this.y - 4, 6, 6);
-    fill(200, 200, 200);
-    ellipse(this.currentX - 5, this.y - 5, 3, 3);
+    stroke(50, 50, 150);
+    strokeWeight(1);
+    noFill();
+    line(this.currentX - 4, this.y + 3, this.currentX + 4, this.y + 3);
   };
+
   this.checkContact = function (gc_x, gc_y) {
     var d = dist(gc_x, gc_y, this.currentX, this.y);
     if (d < 20) {
